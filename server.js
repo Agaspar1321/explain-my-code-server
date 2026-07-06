@@ -18,13 +18,20 @@ const cors = require("cors");
 app.use(cors());   
 // tell the browser: cross-origin requests are allowed
 
+const rateLimit = require("express-rate-limit");
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,   // 15-minute window
+  max: 20,                     // max 20 requests per IP per window
+  message: { error: "Too many requests — please wait a bit and try again." }
+});
+
 app.get("/", (req, res) => {          
     // when a GET request hits "/", run this
   res.send("My server is alive!");    
   // send text back
 });
 
-app.post("/explain", async (req, res) => {
+app.post("/explain", limiter, async (req, res) => {
     const code = req.body.code;
 
     // The code the client sent us
@@ -66,5 +73,5 @@ app.post("/explain", async (req, res) => {
 });
 
 app.listen(process.env.Port || 3000, () => {              // start listening on port 3000
-  console.log("Server running at http://localhost:3000");
+  console.log("Server running");
 });
