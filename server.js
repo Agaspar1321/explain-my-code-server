@@ -32,7 +32,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/explain", limiter, async (req, res) => {
-    const code = req.body.code;
+    const { code, language } = req.body;
 
     // The code the client sent us
     if (!code) {
@@ -42,6 +42,10 @@ app.post("/explain", limiter, async (req, res) => {
       return res.status(400).json({ error: "Paste up to ~8000 characters of code."});
     }
     try {
+      const languageNote = language && language !== "auto"
+      ? `The user says this code is written in ${language}. Explain it with that language's idioms in mind.`
+      : "";
+      
       const message = await client.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 2000,
@@ -62,7 +66,7 @@ app.post("/explain", limiter, async (req, res) => {
     "because it 'takes a moment' — explain the real reason (e.g. the response body is still streaming over the network).\n" +
     "- For async/await, promises, closures, and scope, go a level deeper than surface level: explain WHY, not just WHAT.\n" +
     "- If you are not certain about a mechanism, say so rather than guessing.",
-      messages: [{ role: "user", content: code }],
+      messages: [{ role: "user", content: languageNote ? `${languageNote}\n\n${code}` : code }],
       });
       const explanation = message.content.find(b => b.type === "text")?.text??"";
       res.json({ explanation });
